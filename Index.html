@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hotel Sapphire | Digital Menu</title>
+    <!-- Tailwind CSS for rapid layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for Premium Fallbacks -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#192A56', // Dark Blue
+                        accent: '#F7D794',  // Gold
+                        base: '#1E272E',    // Dark Slate
+                    },
+                    fontFamily: {
+                        // Defining 'Brand Regular' primarily, with 'Playfair Display' as a premium fallback
+                        serif: ['"Brand Regular"', '"Playfair Display"', 'serif'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Resets & Custom Styling */
+        body {
+            background-color: #1E272E;
+            color: #F7D794;
+            overflow: hidden; /* Prevent body scrolling, manage internally */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Hide scrollbars for cleaner aesthetic */
+        ::-webkit-scrollbar { display: none; }
+        * { scrollbar-width: none; }
+
+        /* --- 3D Book Flip Animation CSS --- */
+        #book-container {
+            perspective: 1500px; /* Gives the 3D depth */
+            width: 100%;
+            height: calc(100vh - 30px); /* Subtract agency banner height */
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1E272E;
+            backface-visibility: hidden;
+            transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1), opacity 0.8s ease;
+            transform-origin: left center; /* Pivot from the left spine */
+            transform-style: preserve-3d;
+            z-index: 10;
+        }
+
+        #page-selection {
+            z-index: 5; /* Stays beneath the cover */
+        }
+
+        /* The class added when swiping left */
+        .flipped-left {
+            transform: rotateY(-180deg);
+            opacity: 0; 
+            pointer-events: none; /* Prevent clicks on flipped page */
+        }
+
+        /* --- Scrollable Menu View --- */
+        #menu-scroll-view {
+            position: fixed;
+            top: 30px; /* Below agency banner */
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 30px);
+            background-color: #1E272E;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #menu-scroll-view.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Custom Input Styles */
+        .search-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #F7D794;
+            color: #F7D794;
+            border-radius: 0;
+        }
+        .search-input:focus {
+            outline: none;
+            border-bottom: 2px solid #F7D794;
+        }
+        .search-input::placeholder { color: rgba(247, 215, 148, 0.5); }
+
+        /* Category Tabs */
+        .category-tab {
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        .category-tab.active {
+            border-bottom: 2px solid #F7D794;
+            color: #F7D794;
+            font-weight: 600;
+        }
+
+        /* Subtle pulsing animation for swipe prompt */
+        @keyframes pulse-horizontal {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-10px); }
+        }
+        .animate-swipe {
+            animation: pulse-horizontal 2s infinite ease-in-out;
+        }
+        
+        .premium-border {
+            border: 1px solid rgba(247, 215, 148, 0.3);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased flex flex-col h-screen">
+
+    <!-- Top Agency Banner -->
+    <a href="https://karan-digital-menu-agency.vercel.app/" target="_blank" class="w-full bg-primary text-accent text-xs py-1.5 text-center font-medium block z-50 fixed top-0" style="height: 30px;">
+        Created by Karan Digital Menu Agency
+    </a>
+
+    <!-- Main App Area (Margin to account for top banner) -->
+    <div class="mt-[30px] w-full h-full relative">
+
+        <!-- GLOBAL SEARCH BAR (Visible primarily in Menu View, but DOM placed globally) -->
+        <!-- Moved inside the menu view for better UX flow as requested -->
+
+        <!-- ================= BOOK VIEW (Pages 1 & 2) ================= -->
+        <div id="book-container">
+            
+            <!-- PAGE 1: COVER -->
+            <div id="page-cover" class="book-page flex flex-col items-center justify-between p-8 pb-12">
+                <!-- Top Spacing -->
+                <div class="w-full flex justify-center mt-4">
+                    <!-- Image framed elegantly -->
+                    <div class="p-1 border border-accent/40 rounded-t-full rounded-b-md shadow-lg shadow-black/50 bg-primary/20">
+                        <img src="https://i.ibb.co/Hfdr0JjK/Picsart-26-07-13-01-35-43-365.jpg" alt="Hotel Sapphire Cover" class="w-48 h-64 object-cover rounded-t-full rounded-b-sm">
+                    </div>
+                </div>
+
+                <!-- Center Content -->
+                <div class="text-center mt-8 space-y-3">
+                    <h1 class="text-5xl font-serif tracking-wide text-accent leading-tight">Blue Channel</h1>
+                    <div class="w-16 h-[1px] bg-accent/50 mx-auto my-4"></div>
+                    <p class="text-sm tracking-[0.2em] font-light text-accent/80">SMART DINING, SIMPLY MODERN</p>
+                </div>
+
+                <!-- Bottom Swipe Prompt -->
+                <div class="text-center mt-auto flex items-center justify-center space-x-2 text-accent/70 animate-swipe">
+                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    <span class="font-serif text-lg italic">swipe left for menu</span>
+                </div>
+            </div>
+
+            <!-- PAGE 2: MENU SELECTION -->
+            <div id="page-selection" class="book-page flex flex-col items-center justify-center p-8 bg-base">
+                
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-serif text-accent mb-2">Select Menu</h2>
+                    <p class="text-xs text-accent/60 tracking-wider">HOTEL SAPPHIRE</p>
+                </div>
+
+                <div class="w-full max-w-sm space-y-6">
+                    <!-- Option 1: Food Menu -->
+                    <button onclick="openMenu('food')" class="w-full group relative overflow-hidden premium-border bg-primary/10 hover:bg-primary/30 transition-all duration-300 py-6 rounded-lg flex flex-col items-center justify-center">
+                        <i data-lucide="utensils" class="w-8 h-8 mb-3 text-accent/80 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-2xl font-serif text-accent tracking-wide">Food Menu</span>
+                    </button>
+
+                    <!-- Option 2: Bar Menu -->
+                    <button onclick="openMenu('bar')" class="w-full group relative overflow-hidden premium-border bg-primary/10 hover:bg-primary/30 transition-all duration-300 py-6 rounded-lg flex flex-col items-center justify-center">
+                        <i data-lucide="wine" class="w-8 h-8 mb-3 text-accent/80 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-2xl font-serif text-accent tracking-wide">Bar Menu</span>
+                    </button>
+                </div>
+                
+                <!-- Prompt to go back -->
+                <div class="absolute bottom-10 text-center flex items-center justify-center space-x-2 text-accent/50">
+                    <span class="font-serif text-sm italic">swipe right to close</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= SCROLLABLE MENU VIEW (Items & Categories) ================= -->
+        <div id="menu-scroll-view">
+            <!-- Header Section (Sticky) -->
+            <div class="sticky top-0 bg-base z-20 pb-2 shadow-md shadow-black/50 border-b border-accent/20">
+                <div class="flex items-center justify-between p-4">
+                    <button onclick="closeMenu()" class="flex items-center space-x-1 text-accent hover:text-white transition-colors">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        <span class="font-serif text-lg">Back</span>
+                    </button>
+                    <h2 id="menu-title" class="text-2xl font-serif text-accent tracking-widest text-center absolute left-1/2 transform -translate-x-1/2">Menu</h2>
+                </div>
+
+                <!-- Global Search Bar -->
+                <div class="px-6 pb-4">
+                    <div class="relative flex items-center w-full">
+                        <i data-lucide="search" class="absolute left-0 w-5 h-5 text-accent/60"></i>
+                        <input type="text" id="searchInput" placeholder="Search any dish..." class="search-input w-full pl-8 py-2 text-lg">
+                    </div>
+                </div>
+
+                <!-- Dynamic Category Tabs -->
+                <div id="category-tabs" class="flex overflow-x-auto px-4 space-x-6 pb-2 text-accent/70 font-serif text-lg">
+                    <!-- Tabs injected via JS -->
+                </div>
+            </div>
+
+            <!-- Items List Container -->
+            <div id="items-container" class="p-4 pb-24 space-y-8">
+                <!-- Content injected via JS -->
+            </div>
+
+            <!-- Footer: Review Us Button -->
+            <div class="p-6 pb-12 flex justify-center">
+                <a href="https://g.page/r/CZV62OngG6STEBE/review" target="_blank" class="flex items-center space-x-3 bg-primary text-accent px-6 py-3 rounded-full border border-accent/30 hover:bg-accent hover:text-primary transition-all duration-300 shadow-lg">
+                    <i data-lucide="star" class="w-5 h-5"></i>
+                    <span class="font-sans font-semibold tracking-wide">Review Us on Google</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Initialization Scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        /* =========================================================================
+           1. PAGE FLIPPING LOGIC (Custom 3D Touch implementation)
+           ========================================================================= */
+        const coverPage = document.getElementById('page-cover');
+        const selectionPage = document.getElementById('page-selection');
+        let touchstartX = 0;
+        let touchendX = 0;
+        const swipeThreshold = 50;
+
+        // Handle Touch Start
+        document.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+        });
+
+        // Handle Touch End & Determine Swipe Direction
+        document.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            // Check if scroll view is active (disable flip in scroll view)
+            if (document.getElementById('menu-scroll-view').classList.contains('active')) {
+                return; 
+            }
+
+            if (touchstartX - touchendX > swipeThreshold) {
+                // Swiped Left - Turn page 1 to left
+                coverPage.classList.add('flipped-left');
+            }
+            if (touchendX - touchstartX > swipeThreshold) {
+                // Swiped Right - Close page 1 back
+                coverPage.classList.remove('flipped-left');
+            }
+        }
+
+        /* =========================================================================
+           2. MENU DATA & GOOGLE SHEETS INTEGRATION
+           ========================================================================= */
+        const sheetId = '13Uj_BetnGSAhWhs4bkTf78sJXHsq8Vo8NswwrP8tr5s';
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+
+        // Internal Data State
+        let currentMenuType = 'food'; // 'food' or 'bar'
+        let menuData = {
+            food: {}, // { "Category Name": [ items ] }
+            bar: {}
+        };
+        let allItemsFlat = []; // Used for global search
+
+        // Fallback Data (In case Google Sheet is private or structure fails)
+        const fallbackData = {
+            food: {
+                "Starters": [
+                    { name: "Crispy Calamari", price: "$12", desc: "Served with house-made tartar sauce.", type: "non-veg" },
+                    { name: "Truffle Fries", price: "$8", desc: "Parmesan, parsley, white truffle oil.", type: "veg" }
+                ],
+                "Main Course": [
+                    { name: "Sapphire Steak", price: "$35", desc: "Prime ribeye, garlic mash, asparagus.", type: "non-veg" },
+                    { name: "Wild Mushroom Risotto", price: "$22", desc: "Creamy arborio rice, assorted wild mushrooms.", type: "veg" }
+                ],
+                "Desserts": [
+                    { name: "Lava Cake", price: "$10", desc: "Warm chocolate center, vanilla bean ice cream.", type: "veg" }
+                ]
+            },
+            bar: {
+                "Signature Cocktails": [
+                    { name: "Blue Sapphire", price: "$15", desc: "Gin, blue curacao, lime, edible gold.", type: "veg" },
+                    { name: "Smoked Old Fashioned", price: "$14", desc: "Bourbon, bitters, orange peel, hickory smoke.", type: "veg" }
+                ],
+                "Wines": [
+                    { name: "Cabernet Sauvignon", price: "$12/gl", desc: "Napa Valley, 2018. Rich and bold.", type: "veg" },
+                    { name: "Pinot Grigio", price: "$10/gl", desc: "Italy, crisp and refreshing.", type: "veg" }
+                ]
+            }
+        };
+
+        // Fetch and Parse Data
+        async function fetchMenuData() {
+            try {
+                const response = await fetch(sheetUrl);
+                if (!response.ok) throw new Error("Network response was not ok");
+                const csvText = await response.text();
+                parseCSV(csvText);
+            } catch (error) {
+                console.warn("Could not fetch Google Sheets. Using premium fallback data.", error);
+                menuData = fallbackData;
+                flattenItemsForSearch();
+            }
+        }
+
+        // CSV Parser
+        function parseCSV(csv) {
+            // Assumed columns: Menu Type (Food/Bar), Category, Item Name, Price, Description, Veg/Non-Veg
+            const rows = csv.split('\n');
+            let isFirstRow = true;
+            
+            menuData = { food: {}, bar: {} };
+
+            rows.forEach(row => {
+                // Regex to handle commas inside quotes properly
+                const cols = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || row.split(',');
+                if (!cols || cols.length < 4) return;
+                
+                // Clean quotes
+                const cleanCols = cols.map(c => c.replace(/^"|"$/g, '').trim());
+                
+                if (isFirstRow) { isFirstRow = false; return; } // Skip header
+
+                const type = cleanCols[0].toLowerCase(); // 'food' or 'bar'
+                const category = cleanCols[1];
+                const item = {
+                    name: cleanCols[2] || '',
+                    price: cleanCols[3] || '',
+                    desc: cleanCols[4] || '',
+                    type: (cleanCols[5] || '').toLowerCase() // veg/non-veg
+                };
+
+                if (!item.name) return; // Skip empty rows
+
+                // Route to appropriate object based on column A
+                if (type.includes('bar')) {
+                    if (!menuData.bar[category]) menuData.bar[category] = [];
+                    menuData.bar[category].push(item);
+                } else {
+                    // Default to food
+                    if (!menuData.food[category]) menuData.food[category] = [];
+                    menuData.food[category].push(item);
+                }
+            });
+
+            // If parsing resulted in empty objects (e.g. wrong column format), fallback
+            if (Object.keys(menuData.food).length === 0 && Object.keys(menuData.bar).length === 0) {
+                console.warn("Parsed sheet was empty. Using fallback data.");
+                menuData = fallbackData;
+            }
+            
+            flattenItemsForSearch();
+        }
+
+        function flattenItemsForSearch() {
+            allItemsFlat = [];
+            // Add Food items
+            for (const cat in menuData.food) {
+                menuData.food[cat].forEach(item => {
+                    allItemsFlat.push({ ...item, category: cat, menuType: 'food' });
+                });
+            }
+            // Add Bar items
+            for (const cat in menuData.bar) {
+                menuData.bar[cat].forEach(item => {
+                    allItemsFlat.push({ ...item, category: cat, menuType: 'bar' });
+                });
+            }
+        }
+
+        /* =========================================================================
+           3. UI RENDERING & NAVIGATION LOGIC
+           ========================================================================= */
+        
+        const scrollView = document.getElementById('menu-scroll-view');
+        const itemsContainer = document.getElementById('items-container');
+        const categoryTabs = document.getElementById('category-tabs');
+        const menuTitle = document.getElementById('menu-title');
+        const searchInput = document.getElementById('searchInput');
+
+        // Transition from Book to Scroll View
+        function openMenu(type) {
+            currentMenuType = type;
+            menuTitle.innerText = type === 'food' ? 'Food Menu' : 'Bar Menu';
+            
+            // Clear search
+            searchInput.value = '';
+            
+            // Render UI
+            renderMenuUI();
+            
+            // Show scroll view, hide book interactivity
+            scrollView.classList.add('active');
+            
+            // Small timeout to ensure rendering is complete before scrolling to top
+            setTimeout(() => { scrollView.scrollTo(0, 0); }, 50);
+        }
+
+        // Transition back to Book
+        function closeMenu() {
+            scrollView.classList.remove('active');
+        }
+
+        // Render Tabs and Items based on selected menu
+        function renderMenuUI(filterText = '') {
+            itemsContainer.innerHTML = '';
+            categoryTabs.innerHTML = '';
+            
+            const currentData = menuData[currentMenuType];
+            const categories = Object.keys(currentData);
+            
+            if (categories.length === 0) {
+                itemsContainer.innerHTML = `<p class="text-center text-accent/50 italic mt-10">No items available currently.</p>`;
+                return;
+            }
+
+            let firstCategory = true;
+
+            categories.forEach(cat => {
+                // If searching, filter items in this category
+                let categoryItems = currentData[cat];
+                if (filterText) {
+                    const lowerFilter = filterText.toLowerCase();
+                    categoryItems = categoryItems.filter(item => 
+                        item.name.toLowerCase().includes(lowerFilter) || 
+                        item.desc.toLowerCase().includes(lowerFilter)
+                    );
+                }
+
+                // Skip rendering category if search yielded no items for it
+                if (categoryItems.length === 0) return;
+
+                // --- 1. Render Tab ---
+                // Only render tabs if not searching (tabs don't make sense during global search)
+                if (!filterText) {
+                    const tab = document.createElement('button');
+                    tab.className = `category-tab pb-1 ${firstCategory ? 'active' : 'text-accent/60'}`;
+                    tab.innerText = cat;
+                    tab.onclick = (e) => {
+                        // Update active tab styles
+                        document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active', 'text-accent/60'));
+                        document.querySelectorAll('.category-tab').forEach(t => t.classList.add('text-accent/60'));
+                        e.target.classList.remove('text-accent/60');
+                        e.target.classList.add('active');
+                        
+                        // Scroll to section
+                        const section = document.getElementById(`cat-${cat.replace(/\s+/g, '-')}`);
+                        if (section) {
+                            // Account for sticky header height
+                            const y = section.getBoundingClientRect().top + scrollView.scrollTop - 130;
+                            scrollView.scrollTo({ top: y, behavior: 'smooth' });
+                        }
+                    };
+                    categoryTabs.appendChild(tab);
+                    firstCategory = false;
+                }
+
+                // --- 2. Render Items Section ---
+                const section = document.createElement('div');
+                section.id = `cat-${cat.replace(/\s+/g, '-')}`;
+                section.className = "mb-8";
+                
+                // Category Header
+                section.innerHTML = `
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="h-[1px] flex-grow bg-accent/30"></div>
+                        <h3 class="text-2xl font-serif text-accent">${cat}</h3>
+                        <div class="h-[1px] flex-grow bg-accent/30"></div>
+                    </div>
+                `;
+
+                // Items List
+                const list = document.createElement('div');
+                list.className = "space-y-6";
+
+                categoryItems.forEach(item => {
+                    // Veg/Non-Veg icon logic (optional based on data)
+                    let iconHtml = '';
+                    if (item.type === 'veg') {
+                        iconHtml = `<span class="inline-block w-3 h-3 border border-green-500 rounded-sm flex items-center justify-center mr-2" title="Vegetarian"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span></span>`;
+                    } else if (item.type === 'non-veg') {
+                         iconHtml = `<span class="inline-block w-3 h-3 border border-red-500 rounded-sm flex items-center justify-center mr-2" title="Non-Vegetarian"><span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span></span>`;
+                    }
+
+                    list.innerHTML += `
+                        <div class="flex flex-col border-b border-accent/10 pb-4">
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="text-lg font-serif text-white tracking-wide flex items-center">
+                                    ${iconHtml}
+                                    ${item.name}
+                                </h4>
+                                <span class="text-lg font-semibold text-accent whitespace-nowrap ml-4">${item.price}</span>
+                            </div>
+                            ${item.desc ? `<p class="text-sm font-light text-accent/60 leading-relaxed pr-8">${item.desc}</p>` : ''}
+                        </div>
+                    `;
+                });
+
+                section.appendChild(list);
+                itemsContainer.appendChild(section);
+            });
+
+            if (itemsContainer.innerHTML === '') {
+                 itemsContainer.innerHTML = `<p class="text-center text-accent/50 italic mt-10">No matches found.</p>`;
+            }
+        }
+
+        // Global Search Logic (Searches across both menus if needed, but currently scopes to active menu for better UX)
+        // Adjusting logic based on prompt: "search any dish among both menu bar menu and food menu"
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            if (query === '') {
+                // Reset to current menu view
+                renderMenuUI();
+                categoryTabs.style.display = 'flex';
+                return;
+            }
+
+            // Hide tabs during global search
+            categoryTabs.style.display = 'none';
+            itemsContainer.innerHTML = '';
+
+            const lowerQuery = query.toLowerCase();
+            const results = allItemsFlat.filter(item => 
+                item.name.toLowerCase().includes(lowerQuery) || 
+                item.desc.toLowerCase().includes(lowerQuery)
+            );
+
+            if (results.length === 0) {
+                 itemsContainer.innerHTML = `<p class="text-center text-accent/50 italic mt-10">No dishes found across any menu.</p>`;
+                 return;
+            }
+
+            // Group results by Menu Type and Category for display
+            const groupedResults = {};
+            results.forEach(item => {
+                const groupKey = `${item.menuType.toUpperCase()} - ${item.category}`;
+                if (!groupedResults[groupKey]) groupedResults[groupKey] = [];
+                groupedResults[groupKey].push(item);
+            });
+
+            // Render Results
+            for (const [groupName, items] of Object.entries(groupedResults)) {
+                const section = document.createElement('div');
+                section.className = "mb-8";
+                section.innerHTML = `
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="h-[1px] flex-grow bg-accent/30"></div>
+                        <h3 class="text-lg font-serif text-accent/80">${groupName}</h3>
+                        <div class="h-[1px] flex-grow bg-accent/30"></div>
+                    </div>
+                `;
+                
+                const list = document.createElement('div');
+                list.className = "space-y-4";
+                
+                items.forEach(item => {
+                     list.innerHTML += `
+                        <div class="flex flex-col border-b border-accent/10 pb-4">
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="text-lg font-serif text-white tracking-wide">${item.name}</h4>
+                                <span class="text-lg font-semibold text-accent ml-4">${item.price}</span>
+                            </div>
+                            ${item.desc ? `<p class="text-sm font-light text-accent/60 leading-relaxed pr-8">${item.desc}</p>` : ''}
+                        </div>
+                    `;
+                });
+                section.appendChild(list);
+                itemsContainer.appendChild(section);
+            }
+        });
+
+        // Initialize Data on Load
+        window.onload = () => {
+            fetchMenuData();
+        };
+
+    </script>
+</body>
+</html>
+
